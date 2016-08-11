@@ -12,9 +12,6 @@ tags:
 
 > “我的心啊，你当默然等候耶和华。主的恩典够我们用。 ”
 
-## 推荐一首好歌曲
-
-<iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=520 height=86 src="http://music.163.com/outchain/player?type=2&id=2485441&auto=1&height=66"></iframe>
 
 ## A Brand New Life！
 
