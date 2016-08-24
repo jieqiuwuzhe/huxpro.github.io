@@ -72,13 +72,14 @@ char *a[ ] = {"China","French","America","German"}；
 
 char **为二级指针， s保存一级指针 char *的地址(指针的地址)
 
-`    char *a[] = {"china","genman","england","america"};   
-     char **s = a;   
-`
+		char *a[] = {"china","genman","england","america"};   
+		char **s = a;   
+
 这里a=&a[0]; 是个地址，将这个地址赋给 *s ,再来个**s指向该地址的地址，完美！  
 
 `    char **s = "hello"      
 `
+
 这就是错误的，因为s 的类型是 char **  而 "hello world "的类型是 char *   
 
 ## PS
