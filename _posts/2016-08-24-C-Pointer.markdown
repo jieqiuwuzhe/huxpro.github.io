@@ -31,14 +31,14 @@ C语言中规定数组代表数组所在内存位置的首地址，也是 str[0]
 
 For Example:
 
-`    #include <studio.h>
-    int main()
-    {
-	    char *s;   
-	    s = "hello"   
-	    printf("%p\n",s);   
-	    return 0;   
-    }`
+		#include <studio.h>
+		int main()
+		{
+			char *s;   
+			s = "hello"   
+			printf("%p\n",s);   
+			return 0;   
+		}
 
 打印出来之后，s=0x00422020。这是“hello”的首地址。
 
@@ -77,8 +77,7 @@ char **为二级指针， s保存一级指针 char *的地址(指针的地址)
 
 这里a=&a[0]; 是个地址，将这个地址赋给 *s ,再来个**s指向该地址的地址，完美！  
 
-`    char **s = "hello"      
-`
+		char **s = "hello"      
 
 这就是错误的，因为s 的类型是 char **  而 "hello world "的类型是 char *   
 
