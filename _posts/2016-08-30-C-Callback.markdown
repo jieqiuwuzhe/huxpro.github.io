@@ -38,8 +38,7 @@ tags:
 		void printGoodbye(int len)
 		{
 			printf("送客送客 -- %d/n", len);
-		}
-		//		
+		}		
  		void callback(int times, void (* print)(int))
  		{
  			int i;
