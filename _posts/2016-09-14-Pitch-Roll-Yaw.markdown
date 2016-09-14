@@ -2,7 +2,7 @@
 layout:     post
 title:      "四旋翼基础——三种控制角"
 subtitle:   " \"Pitch，Yaw，Roll \""
-date:       2016-09-12 08:57:00
+date:       2016-09-14 08:57:00
 author:     "Root"
 header-img: "img/contact-bg.jpg"
 catalog: true
