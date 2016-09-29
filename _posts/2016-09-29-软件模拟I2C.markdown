@@ -1,0 +1,36 @@
+---
+layout:     post
+title:      "软件模拟I2C"
+subtitle:   " \"利用GPIO模拟I2C总线 \""
+date:       2016-09-29 14:57:00
+author:     "Root"
+header-img: "img/contact-bg.jpg"
+catalog: true
+tags:
+    - 单片机
+---
+
+> “我来自深海，我没有朋友，大家都不和我玩。只有巨鲨是我的朋友，你愿意和它一起玩吗？————潮汐海灵 ”
+
+# 软件模拟I2C
+
+为什么要模拟I2C？因为我愿意呀哈哈哈哈哈。。。。。。
+
+模拟I2C只需两个GPIO
+
+GPIO->SDA    GPIO->SCL
+
+给外界的接口：
+
+		int swi2c_write(uint8_t i2caddr, uint8_t subaddr, uint8_t data);
+		int swi2c_blkwrite(uint8_t i2caddr, uint8_t subaddr, uint8_t *data, uint32_t blksize);
+		int swi2c_read(uint8_t i2caddr, uint8_t subaddr, uint8_t *data);
+		int swi2c_blkread(uint8_t i2caddr, uint8_t subaddr, uint8_t *data, uint32_t blksize);
+
+需要外界提供的接口：
+
+
+
+—— Root 于 2016.9
+
+
