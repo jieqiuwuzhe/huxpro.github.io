@@ -29,7 +29,64 @@ GPIO->SDA    GPIO->SCL
 
 需要外界提供的接口：
 
+		#define swi2c_udelay(us)    //延时
+		#define swi2c_scl_low()     //SCL拉低
+		#define swi2c_scl_high()    //SCL拉高
 
+		#define swi2c_sda_input()   //SDA输入模式
+		#define swi2c_sda_output()  //SDA输出模式
+		#define swi2c_sda_low()     //SDA拉低           
+		#define swi2c_sda_high()    //SDA拉高
+		#define swi2c_sda()         //读取SDA电平
+
+下面是具体的实现方式：
+
+		//------------------------------------------------------------------------------ 
+		//  Routine:    Start    
+		//  Inputs:     none    
+		//  Outputs:    none    
+		//  Purpose:    Sends I2C Start Trasfer - "S"    
+		//------------------------------------------------------------------------------ 
+		// 在执行任何一次i2c操作前和i2c操作后,应保证:
+		// 1: sda, 输出, 高电平(必须保证)
+		// 2: scl, 输出, 高电平()
+		void swi2c_start(void)   
+		{
+		    swi2c_scl_high();    // 常态下scl应该是输出高电平,此处是为了预防万一
+		    swi2c_udelay(5);     // tSU, Min:4.7us
+
+		    swi2c_sda_low();
+		    swi2c_udelay(5);     // tHD, Min:4.0us 
+
+		    swi2c_scl_low();
+
+		    // 让退前出, scl(low)至少已维持了tLOW时间, 而sda(low)则至少已维持tLOW+tSU时间
+		    swi2c_udelay(5);            // tLOW, Min:4.7us
+
+		    return;
+		}   
+
+
+		//------------------------------------------------------------------------------ 
+		//  Routine:    Stop    
+		//  Inputs:     none    
+		//  Outputs:    none    
+		//  Purpose:    Sends I2C Stop Trasfer - "P"    
+		// stop之前不用延时
+		//------------------------------------------------------------------------------ 
+		void swi2c_stop(void)   
+		{
+		    swi2c_sda_low();
+		    swi2c_udelay(5);            // tSU, Min:4.7us
+
+		    swi2c_scl_high();    
+		    swi2c_udelay(5);            // tSU, Min:4.7us
+
+		    swi2c_sda_high();
+		    return;
+		}
+
+		
 
 —— Root 于 2016.9
 
