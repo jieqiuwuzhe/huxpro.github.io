@@ -1,0 +1,208 @@
+---
+layout:     post
+title:      "软件模拟SPI"
+subtitle:   " \"利用GPIO模拟SPI总线 \""
+date:       2016-09-29 21:57:00
+author:     "Root"
+header-img: "img/contact-bg.jpg"
+catalog: true
+tags:
+    - 单片机
+---
+
+> “你我的约定，我一直记得。那一道道璀璨的光辉，都是为你所亮。————光辉女郎 ”
+
+# SPI的四种模式
+
+![Markdown](http://i1.piimg.com/572619/5bb36ec430fbd2fb.jpg)
+
+SPI有四种工作模式,各个工作模式的不同在于SCLK不同, 具体工作由CPOL,CPHA决定
+
+CPOL: (Clock Polarity),时钟极性
+
+当CPOL为0时,时钟空闲idle时候的电平是低电平;
+
+当CPOL为1时,时钟空闲idle时候的电平是高电平;
+
+CPHA:(Clock Phase),时钟相位
+
+当CPHA为0时,时钟周期的前一边缘采集数据;
+
+当CPHA为1时,时钟周期的后一边缘采集数据;
+
+CPOL和CPHA自由组合，会得到四种不同的模式
+
+# 四种模式下的软件模拟SPI
+
+		#define _CPOL     1
+		#define _CPHA     0
+		#define SCK_IO    SCK输出
+		#define MOSI_IO   MOSI输出
+		#define MISO_IO   MISO输入
+		#define SSEL_IO   CS输出
+		#define SCK_D(X)   SCK(0)为拉低SCK，SCK(1)为拉高SCK
+		#define MOSI_D(X)  MOSI(0)为拉低MOSI，MOSI(1)为拉高MOSI
+		#define SSEL_D(X)  CS(0)为拉低CS，CS(1)为拉高CS
+
+		#define MISO_I()  读取MISO输入状态 
+
+## 模式0
+
+		/**********************************************
+		模式零           写数据
+		***********************************************/
+		#if _CPOL==0&&_CPHA==0          //MODE   0  0   
+		void SPI_Send_Dat(unsigned char dat)
+		{
+		 unsigned char n;
+		 for(n=0;n<8;n++)
+		 {
+		  SCK_D(0);
+		  if(dat&0x80)MOSI_D(1);
+		  else MOSI_D(0);
+		  dat<<=1;
+		  SCK_D(1);
+		 }
+		  SCK_D(0);
+		}
+		/*********************************************
+		模式零         读数据
+		*********************************************/
+		unsigned char SPI_Receiver_Dat(void)
+		{
+		 unsigned char n ,dat,bit_t;
+		 for(n=0;n<8;n++)
+		 {
+		  SCK_D(0);
+		  dat<<=1;
+		  if(MISO_I())dat|=0x01;
+		  else dat&=0xfe;
+		  SCK_D(1);
+		 }
+		  SCK_D(0);
+		  return dat;
+		}
+		#endif
+
+## 模式2
+
+		/**********************************************
+		模式二           写数据
+		***********************************************/
+		#if _CPOL==1&&_CPHA==0           //MODE   1  0
+		void SPI_Send_Dat(unsigned char dat)
+		{
+		 unsigned char n;
+		 for(n=0;n<8;n++)
+		 {
+		  SCK_D(1);
+		  if(dat&0x80)MOSI_D(1);
+		  else MOSI_D(0);
+		  dat<<=1;
+		  SCK_D(0);
+		 }
+		  SCK_D(1);
+		}
+		/*********************************************
+		模式二          读数据
+		*********************************************/
+		unsigned char SPI_Receiver_Dat(void)
+		{
+		 unsigned char n ,dat,bit_t;
+		 for(n=0;n<8;n++)
+		 {
+		  SCK_D(1);
+		  dat<<=1;
+		  if(MISO_I())dat|=0x01;
+		  else dat&=0xfe;
+		  SCK_D(0);
+		 }
+		  SCK_D(1);
+		  return dat;
+		}
+
+		#endif
+
+## 模式1
+
+		/*********************************************
+		模式一        写数据
+		*********************************************/
+		#if _CPOL==0&&_CPHA==1           //MODE  0  1
+		void SPI_Send_Dat(unsigned char dat)
+		{
+		 unsigned char n;
+		 SCK_D(0);
+		 for(n=0;n<8;n++)
+		 {
+		  SCK_D(1);
+		  if(dat&0x80)MOSI_D(1);
+		  else MOSI_D(0);
+		  dat<<=1;
+		  SCK_D(0);
+		 }
+		}
+		/*********************************************
+		模式一       读数据
+		*********************************************/
+		unsigned char SPI_Receiver_Dat(void)
+		{
+		 unsigned char n ,dat,bit_t;
+		 for(n=0;n<8;n++)
+		 {
+		  SCK_D(1);
+		   dat<<=1;
+		  if(MISO_I())dat|=0x01;
+		  else dat&=0xfe;
+		  SCK_D(0);
+		 }
+		  SCK_D(0);
+		  return dat;
+		}
+		#endif
+
+## 模式3
+
+		/************************************
+		模式三          写数据
+		************************************/
+		#if _CPOL==1&&_CPHA==1            //MODE  1  1
+		void SPI_Send_Dat(unsigned char dat)
+		{
+		 unsigned char n;
+		 SCK_D(1);
+		 for(n=0;n<8;n++)
+		 {
+		  SCK_D(0);
+		  if(dat&0x80)MOSI_D(1);
+		  else MOSI_D(0);
+		  dat<<=1;
+		  SCK_D(1);
+		 }
+		}
+		/************************************
+		模式三          读数据
+		************************************/
+		unsigned char SPI_Receiver_Dat(void)
+		{
+		 unsigned char n ,dat,bit_t;
+		 SCK_D(0);
+		 for(n=0;n<8;n++)
+		 { SCK_D(0);
+		  dat<<=1;
+		  if(MISO_I())dat|=0x01;
+		  else dat&=0xfe;
+		  SCK_D(1);
+		 }
+		  SCK_D(1);
+		  return dat;
+		}
+		#endif
+
+
+That's it！！！
+
+
+—— Root 于 2016.9
+
+
