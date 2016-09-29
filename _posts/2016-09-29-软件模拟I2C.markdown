@@ -41,6 +41,8 @@ GPIO->SDA    GPIO->SCL
 
 下面是具体的实现方式：
 
+启动：
+
 		//------------------------------------------------------------------------------ 
 		//  Routine:    Start    
 		//  Inputs:     none    
@@ -66,6 +68,7 @@ GPIO->SDA    GPIO->SCL
 		    return;
 		}   
 
+停止：
 
 		//------------------------------------------------------------------------------ 
 		//  Routine:    Stop    
@@ -86,7 +89,234 @@ GPIO->SDA    GPIO->SCL
 		    return;
 		}
 
+写字节：
+
+		//------------------------------------------------------------------------------ 
+		//  Routine:    Write    
+		//  Inputs:     data
+		//  Outputs:    int    
+		//  Purpose:    Writes data over the I2C bus and return status.    
+		//  返回值: 
+		//    0: 有ACK
+		//    -1: 无ACK
+		//------------------------------------------------------------------------------ 
+		     
+		int swi2c_wdata(uint8_t data)   
+		{
+		    uint8_t        ibit;   
+		    int            retval = 0;
+
+		    // An I2C output byte is bits 7-0 (MSB to LSB). Shift one bit at a time to 
+		    // the SDATA output, and then clock the data to the I2C Slave device.    
+		    // Send 8 bits out the port     
+		    for(ibit = 0; ibit < 8; ibit++) 
+		    {
+		        if (data & 0x80) {
+		            swi2c_sda_high();
+		        } else {
+		            swi2c_sda_low();
+		    	}
+		        
+		        swi2c_udelay(5);    // tSU, Min:4.7us
+		             
+		        swi2c_scl_high();
+		        swi2c_udelay(5);    // tHIGH, Min:4.0us
+
+		        swi2c_scl_low();
+		        swi2c_udelay(5);    // tLOW, Min:4.7us
+
+		        data <<= 1;        //shift the byte by one bit    
+		    }
+		    
+		    // 下面这句需要注意：把sda置为high，是考虑到原来SDA为low的话，
+		    // slave不动sda，sda的状态也为low，会导致误判断获得ACK
+		    // 但是sda默认会被上拉到高的。不管怎样，写上总不会错的。
+		    swi2c_sda_high();
+
+		    swi2c_sda_input();
+		    swi2c_scl_high();
+		    swi2c_udelay(5);    // tSU, Min:4.7us
+
+		    if (!swi2c_sda()) {
+		        retval = 0;        // ACK from slave    
+		    } else {
+		        retval = -1;    // NACK from slave    
+		    }
+
+		    // 退出写一个字节,scl置低,sda置高
+		    swi2c_scl_low(); // 这个置低会通常会使sda有一个由低的到高的跳变(我怀疑是slave检测到scl变低,于是就释放了sda)
+		    swi2c_sda_output();
+		    swi2c_sda_high();
+
+		    // 让退前出, scl(low)/sda(high)至少已维持了tLOW时间
+		    swi2c_udelay(5);    // tLOW, Min:4.7us
+
+		    return retval;
+		}
 		
+读字节：
+
+		//------------------------------------------------------------------------------ 
+		//  Routine:    Read    
+		//  Inputs:     *data_in, send_ack (if true send the ACK signal else send NACK)    
+		//  Outputs:    bool    
+		//  Purpose:    Reads data from the I2C bus and return it in data_in.    
+		//              Returns status.    
+		//------------------------------------------------------------------------------ 
+		     
+		void swi2c_rdata(uint8_t *data, int ack)
+		{
+		    uint8_t        ibit;
+
+		    swi2c_sda_input();
+		    // 这里可能产生一个脉冲
+		     
+		    // Get 8 bits from the device    
+		    for (*data = 0, ibit = 0; ibit < 8; ibit ++) {
+		        swi2c_scl_high();
+		        swi2c_udelay(5);    // tHIGH, Min:4.7us
+
+		        if (swi2c_sda()) {
+		            *data = *data | (1 << (7 - ibit));
+		        }
+
+		        swi2c_scl_low();    // 这第8个置低会通常会使sda有一个由低的到高的跳变(我怀疑是slave检测到scl变低,于是就释放了sda)
+		        swi2c_udelay(5);    // tLOW, Min:4.7us
+		    }
+		    
+		    swi2c_sda_output();
+		    // 这里可能产生一个脉冲
+		    // 一旦设为一个输出,原因值是1,又要ACK
+		    if (ack) {
+		        swi2c_sda_low();    // Set data pin to output/low to ACK the read
+		    } else {
+		        swi2c_sda_high();    // Set data pin to input/high to NACK the read
+		    }
+		    swi2c_udelay(5);    // tSU, Min:4.7us
+		     
+		    swi2c_scl_high();    // Set SCLK high    
+		    swi2c_udelay(5);    // tHIGH, Min:4.0us
+
+		    swi2c_scl_low();    // Set SCLK high    
+		    swi2c_sda_high();
+
+		    // 让退前出, scl(low)/sda(high)至少已维持了tLOW时间
+		    swi2c_udelay(5);    // tLOW, Min:4.7us
+
+		    return;
+		}   
+
+写slave中某个地址的值（单字节或 blksize 个字节）：
+
+		//------------------------------------------------------------------------------ 
+		    
+		// Procedure:   swi2c_write
+		// Inputs:      i2caddr, subaddr, data
+		// Outputs:     int
+		// Description: Writes a byte to the given address and return status.    
+		//------------------------------------------------------------------------------ 
+		int swi2c_write(uint8_t i2caddr, uint8_t subaddr, uint8_t data)
+		{
+
+		    swi2c_start();    // Send start signal    
+		    if (swi2c_wdata(i2caddr & 0xfe)) {    // Send identifier I2C address
+		        swi2c_stop();    // Send I2C Stop Transfer    
+		        return -1;   
+		    }
+		    if (swi2c_wdata(subaddr)) {    // Send address to device
+		        swi2c_stop();    // Send I2C Stop Transfer
+		        return -1;   
+		    }
+		    if (swi2c_wdata(data)) {    // Send address to device
+		        swi2c_stop();    // Send I2C Stop Transfer
+		        return -1;   
+		    }
+		    swi2c_stop();    // Send I2C Stop Transfer
+		    return 0;   
+		}
+
+		int swi2c_blkwrite(uint8_t i2caddr, uint8_t subaddr, uint8_t *data, uint32_t blksize)
+		{
+		    uint32_t        blk;
+
+		    swi2c_start();    // Send start signal    
+		    if (swi2c_wdata(i2caddr & 0xfe)) {    // Send identifier I2C address
+		        swi2c_stop();    // Send I2C Stop Transfer    
+		        return -1;   
+		    }
+		    if (swi2c_wdata(subaddr)) {    // Send address to device
+		        swi2c_stop();    // Send I2C Stop Transfer
+		        return -1;   
+		    }
+		    for (blk = 0; blk < blksize; blk ++) {
+		        if (swi2c_wdata(data[blk])) {    // Send data to device
+		            swi2c_stop();    // Send I2C Stop Transfer
+		            return -1;   
+		        }
+		    }
+		    swi2c_stop();    // Send I2C Stop Transfer
+		    return 0;   
+		}
+
+
+读slave中某个地址的值（单字节或 blksize 个字节）：
+
+		//------------------------------------------------------------------------------ 
+		    
+		// Procedure:   I2C_Read    
+		// Inputs:      *data_in, address    
+		// Outputs:     bool    
+		// Description: Reads a byte from the given address and return status.    
+		//------------------------------------------------------------------------------ 
+		int swi2c_read(uint8_t i2caddr, uint8_t subaddr, uint8_t *data)
+		{   
+		    swi2c_start();    // Send start signal    
+		    if (swi2c_wdata(i2caddr & 0xfe)) {    // Send identifier I2C address
+		        swi2c_stop();    // Send I2C Stop Transfer    
+		        return -1;   
+		    }
+		    if (swi2c_wdata(subaddr)) {    // Send address to device
+		        swi2c_stop();    // Send I2C Stop Transfer
+		        return -1;   
+		    }
+		    swi2c_start();    // Send start signal
+		    if (swi2c_wdata(i2caddr | 0x01)) {    // Send identifier I2C address
+		        swi2c_stop();    // Send I2C Stop Transfer    
+		        return -1;   
+		    }   
+		    swi2c_rdata(data, 0);
+		    swi2c_stop();    // Send I2C Stop Transfer
+		    return 0;
+		}
+
+		int swi2c_blkread(uint8_t i2caddr, uint8_t subaddr, uint8_t *data, uint32_t blksize)
+		{   
+		    uint32_t        blk;
+
+		    swi2c_start();    // Send start signal    
+		    if (swi2c_wdata(i2caddr & 0xfe)) {    // Send identifier I2C address
+		        swi2c_stop();    // Send I2C Stop Transfer    
+		        return -1;   
+		    }
+		    if (swi2c_wdata(subaddr)) {    // Send address to device
+		        swi2c_stop();    // Send I2C Stop Transfer
+		        return -1;   
+		    }
+		    swi2c_start();    // Send start signal    
+		    if (swi2c_wdata(i2caddr | 0x01)) {    // Send identifier I2C address
+		        swi2c_stop();    // Send I2C Stop Transfer    
+		        return -1;   
+		    }   
+		    for (blk = 0; blk < blksize; blk ++) {
+		        swi2c_rdata(data + blk, (blk != blksize - 1)? 1: 0);
+		    }
+		    swi2c_stop();    // Send I2C Stop Transfer
+		    return 0;
+		}
+
+Thit's it ~~~！
+
+
 
 —— Root 于 2016.9
 
