@@ -238,7 +238,7 @@ EA：空递增堆栈
 		CMP R1,#0                ;判断是否有信号
 		BEQ 12C_SEM_WAIT         ;若没有信号，则等待
 
-#### 3、ARM数据处理指令
+#### 4、ARM数据处理指令
 
 **数据传送指令、算术逻辑运算指令、比较指令、乘法指令**
 
@@ -319,7 +319,7 @@ MRC/MCR指令举例如下：
 在SWI异常中断处理程序中，取出SWI立即数的步骤为：首先确定引起软中断的SWI指令是ARM指令还是THUMB指令，这可通过对SPSR访问得到，然后要取得该SWI指令的地址，这可通过访问LR寄存器得到，接着读出指令，分解出立即数  
 程序代码如下：
 
-		T_bit EQU 0x20                ;0010 0000
+		T_bit EQU 0x20                    ;0010 0000
 		SWI_Hander
 			    STMFD SP!,{R0-R3,R12,LR}  ;现场保护
 			    MRS R0,SPSR               ;读取SPSR
@@ -354,6 +354,73 @@ MRS应用：
 		MOV PC,LR
 
 MSR：写状态寄存器指令，在ARM处理器中，只有MSR指令可以直接设置状态寄存器CPSR或SPSR
+
+### ARM伪指令介绍
+
+ARM伪指令不是ARM指令集中的指令，只是为了编程方便编译器定义了伪指令 
+
+#### 1、ARM地址读取伪指令
+
+ARM地址读取伪指令有四条，分别是  
+ADR    伪指令  
+ADRL   伪指令  
+LDR    伪指令  
+NOP    伪指令  
+
+作用的范围不一样，由小到大： ADR < ADRL < LDR
+
+**ADR、ADRL指令**将基于PC相对偏移的地址读取到存储器中，例如
+
+		ADR  R0 , DISP_TAB    ; 加载转换表地址
+		LDR  R1 , [R0,R2]     ;使用R2作为参数，进行查表
+			.....
+		DISP_TAB
+		DCB
+    		0xc0,0xf9,0xa4,0x99,0x92,0x82,0xf8,0x80
+
+**LDR伪指令**用于加载32位的立即数或一个地址值到指定寄存器，需要前加 =
+
+		LDR R0,=0x123456     ;加载32位立即数0x123456
+		LDR R0,=DATA_BUF+60  ;加载DATA_BUF地址+60
+
+**NOP**是空操作伪指令
+
+#### 2、符号定义伪指令
+
+符号定义伪指令：  
+1、全局变量声明：GBLA、GBLL 和 GBLS  
+2、局部变量声明：LCLA、LCLL 和 LCLS  
+3、变量赋值：SETA、SETL、和 SETS  
+4、为一个通用寄存器列表定义名称：RLIST  
+5、为一个协处理器的寄存器定义名称：CN  
+6、为一个协处理器定义名称：CP  
+
+>以上指令中，最后一个字符 A代表算术变量，初始值为0，L代表逻辑变量，初值为FALSE，S代表字符串，初值为空
+
+伪指令应用：
+
+		MACRO               ;声明一个宏
+		SENDDAT $dat        ;宏的原型 $表示后面是变量
+		LCLA bitno          ;声明一个局部算术变量
+		...
+		bitno SETA 8        ;设置变量值为8
+		...
+		MEND                ;结束
+
+**RLIST指令用法**：
+
+name RLIST {reglist}
+		
+		LoReg RLIST {R0-R7}   ;定义寄存器列表LoReg
+
+**CN指令用法**：
+
+name CN expr  
+>其中name是要定义的协处理器的寄存器名称，expr对应的协处理器的寄存器编号，数值范围 0 ~ 15
+MemSet CN 1  ;将协处理器的寄存器1名称定义为 MemSet
+
+CP指令的用法，举例如下：
+DivRun CP 5  ;将协处理器5名称定义为DivRun
 
 
 
