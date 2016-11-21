@@ -23,7 +23,7 @@ C程序   ：   *.c
 
 #### 1、汇编语句格式：  
 
-[ 标号 ]  <指令 | 条件 | S >   <操作数>   [ ;注释]
+[ 标号 ]  <指令 / 条件 / S >   <操作数>   [ ;注释]
 
 >1、所有标号必须在一行的顶格书写，其后面不要加：  
 >2、所有指令均不能顶格书写  
@@ -47,7 +47,7 @@ N { routname }
 
 局部标号引用格式：
 
- % {F | B }  {A | T}  N {routname }
+% {F / B }  {A / T}  N {routname }
 
 >其中：
 >% 表示局部标号引用操作  
@@ -183,12 +183,149 @@ ARM7TDMI (-S) 是没有BLX指令的，但可以通过以下几条程序实现其
 
 ### C与汇编混合编程
 
+在需要C与汇编混合编程时，可使用直接内存汇编的方法混合编程，或者将汇编文件以文件的形式加入项目中
+
+内嵌汇编的语法：
+		__asm
+		{
+		      指令 [;指令]   /*注释*/
+		      ......
+		      [指令]
+		}
+
+应用举例：
+
+		__inline  void  enable_IRQ(void)
+		{
+		      int  temp
+		      __asm           //嵌入汇编代码
+		      {
+		           MRS  tmp , CPSR             //读取CPSR的值
+		           BIC    tmp , tmp, #0x80    //IRQ中断禁止位I清零，即允许中断
+		           MSR  CPSR , tmp             //设置CPSR的值
+		      }
+		}
+
+ARM编译器特定的关键词  
+__asm：告诉编译器下面的代码是用汇编写的  
+__inline：声明该函数在其被调用的地方展开  
+__irq：声明该函数可以被用做irq或者fiq异常的中断处理程序  
+__pure：声明一个函数，其结果仅仅依赖于其输入参数，而且它没有负效应  
+__int64：是long long 的同义词  
+__volatile：告诉编译器该对象可能在程序之外被修改  
+__weak：用于限定一个对象，该对象如果连接时不存在，不会报错  
+
+内嵌汇编的指令用法：  
+1、不能直接向PC寄存器赋值，程序跳转只能使用 B 或BL指令实现，但是只有 B 可以使用C程序中的标号，BL 不能。  
+2、在内嵌汇编指令中，常量前面的 # 可以省略  
+3、所有的内存分配均由C编译器完成，内嵌汇编器不支持内嵌汇编程序用于内存分配的伪指令
+以上的常见的注意事项  
+
+内嵌汇编器与 armasm 汇编器的差异：  
+1、内嵌汇编器不支持通过 " . " 指示符 或 PC 获取 当前指令地址， 不支持 LDR Rn , =expr伪指令  
+2、使用 Mov  Rn , expr 指令向寄存器赋值，不支持标号表达式，不支持 ADR 和 ADRL ，不支持 BX ，不能向 PC 赋值。  
+3、N、Z、C 和V标志中的C不具有真实意义  
+
+内存汇编还有一些注意事项：  
+
+1、不要使用寄存器代替变量，尽管有时候寄存器明显对应某个变量
+
+		int  had_f (int x)
+		{
+		     __asm
+		       {
+		           ADD R0,R0, #1    //发生寄存器冲突，实际上x的值没有变化
+		       }
+		    return(x) ;
+		}
+
+使用 IMPORT 伪指令来引入全局变量，并利用LDR 和 STR 指令根据全局变量的地址访问它们
+下面例子是一个汇编代码的函数，它读取全局变量 glovbvar，将其加1后返回
+
+		     AREA  globats , CODE , READONLY
+		     EXPORT  asmsubroutime
+		     IMPORT   glovbvar
+		asmsubroutime
+		     LDR R1, =glovbvar 
+		     LDR R0, [R1]
+		     ADD R0 , R0 , #1
+		     STR R0 , [R1]
+		     MOV PC , LR
+		     END
+
 ### C与汇编相互调用
+
+寄存器的使用规则为：子程序间通过寄存器R0 - R3 来传递参数，使用 R4 - R11来保存局部变量， R12用作过程调用中间临时寄存器，记作 IP， R13用作堆栈指针，R14作为链接寄存器，记作 LR，R15是程序计数器
+
+子程序参数传递规则：当寄存器不超过4个时，使用 R0 - R3来传递参数，当超过4个时，可以使用堆栈来传递参数，入栈的顺序与参数顺序相反，即最后一个字数据先入栈
+
+子程序结果返回规则：结果为一个32位的整数时，可以通过寄存器R0返回，如果是64位，通过R0和R1返回，对于位数更多的结果，需要通过内存来传递
 
 #### 1、C调用汇编
 
+在汇编程序中使用 EXPORT 伪指令声明本子程序，使其它程序可以调用子程序，在C语言程序中使用extern关键字声明外部函数（声明要调用的汇编子程序），即可调用此汇编子程序
+
+C程序调用汇编程序例子如下：
+
+被调用的汇编子程序代码：
+
+		    AREA  SCopy , CODE , READONLY
+		    EXPORT  strcopy   ; 声明strcopy ,以便外部程序引用
+		strcopy
+		    ;R0  为目标字符串的地址
+		    ; R1 为源字符串的地址
+		    LDRB R2,[R1] , #1  ; 读取字节数据，源地址加1
+		    STRB  R2,[R0], #1  ; 保存读取的1字节数据，目标地址加1
+		    CMP  R2, #0            ; 判断字符串是否复制完毕
+		    BNE   strcopy          ; 没有复制完毕，继续循环
+		    MOV   PC,LR           ; 返回
+		    END
+
+调用汇编的C函数：
+
+		#include <stdio.h>   
+		extern void strcopy(char *d,const char *s)    //声明外部函数，即汇编子程序  
+		int main(void)   
+		{   
+		    const char *strcstr = "First String-source" ;    //定义字符串常量   
+		    char dststr[] = "Second string-destination";   //定义字符串变量   
+		    printf("Before copying:  /n");   
+		    printf("%s/n %s/n",srcstr,dststr);    //显示源字符串和目标字符串的内容   
+		    strcopy(dststr,srcstr);   
+		    printf("After copying: /n");   
+		    printf("%s/n %s/n",srcstr,dststr);   //显示复制后的结果   
+		    return 0;   
+		} 
+
 #### 2、汇编调用C
 
+在汇编程序中使用IMPORT伪指令声明将要调用的C程序函数，在调用C程序时，要正确设置入口参数，然后使用BL调用
+
+C程序函数代码：
+
+		Code:
+		int sum5(int a,int b,int c,int d,int e)   
+		{   
+		    return a+b+c+d+e;    //返回5个变量的和   
+		} 
+
+汇编调用C程序：
+
+		    EXPORT  CALLSUM5
+		    AREA  Example , CODE , READONLY
+		    IMPORT sum5      ;  声明外部标号 sum5，即C函数 sum5()
+		CALLSUM5
+		    STMFD  SP!,{LR}  ;   LR寄存器入栈
+		    ADD R1,R0,R0     ;   设置sum5函数入口参数，R0为参数a
+		    ADD R3,R1,R2
+		    STR  R3,[SP #4]!  ;   参数e要通过堆栈传递
+		    ADD R3,R1,R1     ;   R3为参数d
+		    BL sum5               ;   调用sum5()，结果保存在R0中
+		    ADD SP,SP, #4    ;   修正SP指针
+		    LDMFD  SP!, {PC}  ; 子程序返回
+		    END
+
+至此，自己以前关于ARM汇编的笔记及新遇到的问题整理完毕。
 
 
 
