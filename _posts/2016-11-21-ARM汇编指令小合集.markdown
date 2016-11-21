@@ -416,13 +416,107 @@ name RLIST {reglist}
 **CN指令用法**：
 
 name CN expr  
+
 >其中name是要定义的协处理器的寄存器名称，expr对应的协处理器的寄存器编号，数值范围 0 ~ 15
-MemSet CN 1  ;将协处理器的寄存器1名称定义为 MemSet
 
-CP指令的用法，举例如下：
-DivRun CP 5  ;将协处理器5名称定义为DivRun
+		MemSet CN 1  ;将协处理器的寄存器1名称定义为 MemSet
 
+**CP指令的用法**:
 
+		DivRun CP 5  ;将协处理器5名称定义为DivRun
+
+#### 3、数据定义伪指令
+
+1、声明一个文字池：LTORG  
+2、定义一个结构化的内存表的首地址：MAP 或 ^  
+3、定义结构化内存表中的一个数据域：FIELD 或 #  
+4、分配一块内存空间，并用0初始化： SPACE 或 %  
+5、分配一段字节内存单元，并用指定的数据初始化： DCB  
+6、分配一段字的内存单元，并用指令的数据初始化： DCD 和 DCDU  
+7、分配一段双字的内存单元，并用64位整数数据初始化： DCQ 和 DCQU  
+8、分配一段半字的内存单元，并用指定的数据初始化： DCW 和 DCWU  
+
+**LTORG** 用于声明一个文子池，在使用LDR伪指令时，要在适当的地址加入LTORG声明文子池，这样就会把要加载的数据保存在文子池内，再用ARM的加载指令读出数据（若没有使用LTORG声明文子池，则汇编器会在程序末尾自动声明）
+
+		...
+		LDR R0,=0x12345678
+		ADD R1,R1,R0
+		MOV PC,LR
+		LTORG        ;声明文子池
+		DCD 0x333
+		DCD 0x555
+
+**MAP** 用于定义一个结构化的内存表的首地址，^与MAP同义
+
+		MAP 0x00, R9  ;定义内存表的首地址为R9
+
+**FIELD** 用于定义一个结构化内存表的数据域，#与FIELD同义
+		
+		^ _ISR_STARTADDRESS    ; ^ is synonym for MAP
+		HandleReset  #  4      ; 定义数据域 HandleReset，长度为4字节
+
+**SPACE**用于分配一块内存单元，并用0初始化，%与SPACE同义
+
+		AREA DataRAM,DATA,READWROTE   ;声明一数据段，名为DataRAM
+		DataBuf SPACE 1000            ;分配1000字节空间
+
+**DCB**伪指令格式：  
+{label} DCB expr{,expr} ...
+
+>加{}的代表可有可无，DCD、DCW指令格式与DCB基本相同
+
+**ASSERT**为断言错误伪指令，在汇编编译器对汇编程序的第二遍扫描中，若其中ASSERT条件不成立，ASSERT伪指令将报告该错误信息
+
+		ASSERT Top<>Temp    ;断言Top 不等于 Temp
+		ASSERT :DEF:ENDIAN_CHANGE     
+
+#### 4、汇编控制伪指令
+
+1、条件汇编控制：**IF、ELSE 和 ENDIF**
+
+IF、ELSE 和 ENDIF 伪指令能够根据条件把一段代码包括在汇编程序内或将其排除在程序之外
+[ 与 IF同义 ，| 与 ELSE 同义， ] 与 ENDIF 同义
+
+		[ {CONFIG} = 16    ; [ 代表 IF
+		BL __rt_udiv_1  
+		|                  ; | 代表 ELSE
+		BL __rt_div0
+		]                  ; ] 代表 ENDIF
+
+2、MACRO 和 MEND
+
+MACRO 和 MEND 伪指令用于宏定义，MACRO表示宏定义的开始，MEND表示宏定义的结束，用MACRO和MEND定义的一段代码，称为宏定义体，伪指令应用如下：
+
+		MACRO
+		CSI_SETB        ;宏名为CSI_SETB，无参数
+		LDR R0,=rPDATG  ;读取GPG0 口的值
+		LDR R1,[R0]
+		ORR R1,R1,#0x01 ;CSI置位操作
+		STR R1,[R0]     ;输出控制
+		MEND
+
+3、WHILE 和 WEND
+
+WHILE 和 WEND 伪指令用于根据条件重复 编相同的或几乎相同的一段源程序
+
+		WHILE no< 5
+		no SETA no+1
+		...
+		WEND
+
+#### 5、杂项伪指令
+
+如段定义伪指令，入口点设置伪指令，包含文件伪指令，标号导出或引入声明  
+1、边界对齐：ALIGN  
+2、段定义： AREA  
+3、指令集定义：CODE16 和 CODE32  
+4、汇编结束： END  
+5、程序入口： ENTRY  
+6、常量定义：EQU  
+7、声明一个符号可以被其它文件引用：EXPORT 和 GLOBAL  
+8、声明一个外部符号：IMPORT 和 EXTERN  
+9、包含文件： GET 和 INCLUDE  
+10、给特定的寄存器命名： RN  
 
 
 —— Root 于 2016.11
