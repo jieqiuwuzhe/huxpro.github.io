@@ -1,0 +1,55 @@
+---
+layout:     post
+title:      "飞控之卡尔曼滤波算法"
+subtitle:   " \" 扩展卡尔曼滤波EKF \""
+date:       2016-11-26 09:57:00
+author:     "Root"
+header-img: "img/404-bg.jpg"
+catalog: true
+tags:
+    - UAV
+---
+
+> “我也希望变成蝴蝶的那一天，不再灰色，不再痛苦。不会再让我丑陋的外表吓到美丽的你。————深渊巨口 ”
+
+卡尔曼滤波对无人机整个的飞控系统的重要性不言而喻，值得我们花点时间来研究一下这个卡尔曼到底是什么鬼。
+
+由于特性限制，单类传感器在大多数情况下无法获取准确的信息，因此需要融合多种传感器，得到最接近真实的数据（加速度计与陀螺仪的融合、INS和GPS的融合），这时候卡尔曼滤波器就派上用场了，与其说是滤波器，Kalman Filter实际上是一种最优估计方法。  
+
+当然了，实际情况中理论上只适用于线性系统的经典卡尔曼滤波器是不适合于大多数情况的，于是便有了EKF（Extended Kalman Filter） 和UKF（Unscented Kalman Filter)。大名鼎鼎的开源飞控PixHakw/APM便是全面使用了EKF算法，还有名气比Pixhawk低一点的OpenPilot飞控同样使用了EKF，而德国的一款开源飞控Autoquad则使用了UKF。
+
+由于最近实在太懒，看完一堆资料之后懒得整理，所以直接放链接吧，嘻嘻。
+
+Here We GO!!
+
+1、卡尔曼滤波 -- [从推导到应用]("http://bbs.loveuav.com/thread-120-1-1.html")
+
+2、卡尔曼滤波 -- [Kalman滤波器]("http://bbs.loveuav.com/thread-116-1-1.html")
+
+3、卡尔曼滤波 -- [理解卡尔曼滤波器]("http://bbs.loveuav.com/thread-275-1-1.html")
+
+4、卡尔曼滤波 -- [从牛顿运动定律说起]("http://bbs.loveuav.com/thread-277-1-1.html")
+
+5、卡尔曼滤波 -- [卡尔曼入门经典书籍]("http://bbs.loveuav.com/thread-333-1-1.html")
+
+6、卡尔曼滤波 -- [一个面向初学者的交互式教程]("http://bbs.loveuav.com/thread-196-1-1.html")
+
+7、卡尔曼滤波 -- [OpenPilot的扩展卡尔曼滤波(EKF)学习笔记]("http://bbs.loveuav.com/thread-108-1-2.html")
+
+8、卡尔曼滤波 -- [科普：卡尔曼滤波]("http://bbs.loveuav.com/forum.php?mod=viewthread&tid=110")
+
+9、卡尔曼滤波 -- [理解Kalman滤波的使用]("http://bbs.loveuav.com/thread-274-1-1.html")
+
+10、卡尔曼滤波 -- [一个开源的扩展卡尔曼滤波器(EKF)的C++库]("http://bbs.loveuav.com/thread-109-1-1.html")
+
+11、卡尔曼滤波 -- [详解状态空间模型]("http://bbs.loveuav.com/thread-276-1-1.html")
+
+12、卡尔曼滤波 -- [加速度计与陀螺仪融合]("http://bbs.loveuav.com/thread-8-1-1.html")
+
+13、卡尔曼滤波 -- [卡尔曼滤波在单片机上的使用]("http://bbs.loveuav.com/thread-242-1-1.html")
+
+懒人自有懒招儿~~~嘻嘻嘻嘻~~~
+
+—— Root 于 2016.11
+
+
