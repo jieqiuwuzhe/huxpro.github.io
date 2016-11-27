@@ -44,7 +44,7 @@ Here We GO!!
 
 11、卡尔曼滤波 -- [详解状态空间模型](http://bbs.loveuav.com/thread-276-1-1.html)
 
-12、卡尔曼滤波 -- [加速度计与陀螺仪融合](ht为tp://bbs.loveuav.com/thread-8-1-1.html)
+12、卡尔曼滤波 -- [加速度计与陀螺仪融合](http://bbs.loveuav.com/thread-8-1-1.html)
 
 13、卡尔曼滤波 -- [卡尔曼滤波在单片机上的使用](http://bbs.loveuav.com/thread-242-1-1.html)
 
