@@ -1,0 +1,43 @@
+---
+layout:     post
+title:      "无人机控制信号"
+subtitle:   " \" 通用的无人机控制信号 \""
+date:       2016-12-09 10:57:00
+author:     "Root"
+header-img: "img/Jilin.jpg"
+catalog: true
+tags:
+    - UAV
+---
+
+> “我自人类诞生，却被人类所抛弃。孤独的徘徊于世间，却与世间的一切格格不入。于是，我只能试图抓住每个遇到的生命，去倾诉那颗从不被理解的心。————蒸汽机器人 ”
+
+
+对无人机的远程控制，不管采用什么样的方式，最后传递给飞控的，一定是不同占空比的PWM波。在此给出一种通用的控制波形，以供参考。
+
+此处遥控器采用美国手（左手油门）：
+
+![Markdown](http://p1.bpimg.com/572619/5074ec93928c4c45.jpg)
+
+其中，油门、Yaw、Pitch、Row 均为PWM控制，分别对应四个通道。剩下的拨动开关通道对应的也是PWM波形，但是不同的是，前四个通道的PWM波形占空比是从最小到最大均匀变化，（按照从左到右，从上到下的顺序），拨动开关对应的PWM波形是要么最小，要么最大。
+
+具体波形及测量数据如下：
+
+最小占空比：
+
+![Markdown](http://p1.bpimg.com/572619/a09a5d85a40c7df6.jpg)
+
+![Markdown](http://p1.bpimg.com/572619/4ec27fc30af3e9d8.jpg)
+
+最大占空比：
+
+![Markdown](http://p1.bpimg.com/572619/313931f35227098a.jpg)
+
+![Markdown](http://p1.bpimg.com/572619/57ff495bc08950b0.jpg)
+
+以上~
+
+
+—— Root 于 2016.12
+
+
