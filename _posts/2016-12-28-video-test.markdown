@@ -15,6 +15,8 @@ Idina Menze和Caleb Hyles激情对唱Let It Go：<iframe height=498 width=510 sr
 Idina Menze和Caleb Hyles激情对唱Let It Go：<iframe height=498 width=510 src="http://player.youku.com/embed/XNjcyMDU4Njg0" frameborder=0 allowfullscreen></iframe>
 
 
+<div><object id="ssss" width="480" height="370" ><param name="allowScriptAccess" value="always" /><embed pluginspage="http://www.macromedia.com/go/getflashplayer" src="http://video.sina.com.cn/share/video/250906439.swf" type="application/x-shockwave-flash" name="ssss" allowFullScreen="true" allowScriptAccess="always" width="480" height="370"></embed></object></div>
+
 —— Root 于 2016.12
 
 
